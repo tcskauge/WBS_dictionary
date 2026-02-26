@@ -1,0 +1,73 @@
+Private Sub CalculateTopFromParent( _
+    ByVal nodeID As String, _
+    ByRef nodes As Object, _
+    ByVal vertikalAvstand As Double, _
+    ByVal fixedTopLevel0 As Double _
+)
+
+    ' Nivå 0 → fast posisjon
+    If nodes(nodeID).Level = 0 Then
+        
+        nodes(nodeID).TopPos = fixedTopLevel0
+        Exit Sub
+        
+    End If
+    
+    Dim parentID As String
+    parentID = nodes(nodeID).ParentID
+    
+    ' Sikkerhetssjekk
+    If Not nodes.Exists(parentID) Then Exit Sub
+    
+    nodes(nodeID).TopPos = _
+        nodes(parentID).BottomPos + vertikalAvstand
+
+End Sub
+
+Private Sub CalculateBottomFromDescendants( _
+    ByVal nodeID As String, _
+    ByRef nodes As Object, _
+    ByRef children As Object, _
+    ByVal boksHoyde As Double, _
+    ByVal vertikalAvstand As Double _
+)
+
+    Dim descendantCount As Long
+    
+    descendantCount = CountDescendants(nodeID, children)
+    
+    nodes(nodeID).BottomPos = _
+        nodes(nodeID).TopPos + _
+        descendantCount * (boksHoyde + vertikalAvstand)
+
+End Sub
+
+Private Function CountDescendants( _
+    ByVal nodeID As String, _
+    ByRef children As Object _
+) As Long
+
+    Dim childID As Variant
+    Dim total As Long
+    
+    ' Hvis ingen children → 0 descendants
+    If Not children.Exists(nodeID) Then
+        CountDescendants = 0
+        Exit Function
+    End If
+    
+    total = 0
+    
+    For Each childID In children(nodeID)
+        
+        ' Tell direkte child
+        total = total + 1
+        
+        ' Tell child sine descendants
+        total = total + CountDescendants(CStr(childID), children)
+        
+    Next childID
+    
+    CountDescendants = total
+
+End Function
