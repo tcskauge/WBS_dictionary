@@ -1,11 +1,13 @@
-
-
 Option Explicit
 
 Public ID As String
-Public parentID As String
+Public ParentID As String
 Public Level As Long
-Public SubtreeHeight As Double
-Public ShapeObj As Shape
 Public Caption As String
 Public FillColor As Long
+
+Public TopPos As Double
+Public BottomPos As Double
+
+Public LeftPos As Double
+Public ShapeObj As Shape
