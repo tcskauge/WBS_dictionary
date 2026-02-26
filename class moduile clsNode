@@ -1,7 +1,7 @@
 Option Explicit
 
 Public ID As String
-Public ParentID As String
+Public parentID As String
 Public Level As Long
 Public Caption As String
 Public FillColor As Long
@@ -10,5 +10,5 @@ Public TopPos As Double
 Public LeftPos As Double
 Public ShapeObj As Shape
 
-Public Milestone As Boolean
-Public Mandatory As Boolean
+Public Milestone As String
+Public Mandatory As String
