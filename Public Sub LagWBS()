@@ -11,7 +11,7 @@ Public Sub LagWBS()
     Dim r As ListRow
     Dim info As clsNode
     
-    Dim indent As Double: indent = 30
+    Dim indent As Double: indent = 15
     Dim vertikalAvstand As Double: vertikalAvstand = 15
     Dim linjeTykkelse As Double: linjeTykkelse = 6
     
@@ -58,6 +58,20 @@ Public Sub LagWBS()
         info.Caption = CStr(r.Range.Cells(1, 3).Value)
         info.FillColor = r.Range.Cells(1, 1).Interior.Color
         
+        ' Milepæl
+        If LCase(CStr(r.Range.Cells(1, 4).Value)) = "ja" Then
+            info.Milestone = "Ja"
+        Else
+            info.Milestone = "Nei"
+        End If
+        
+        ' Obligatorisk
+        If LCase(CStr(r.Range.Cells(1, 5).Value)) = "ja" Then
+            info.Mandatory = "Ja"
+        Else
+            info.Mandatory = "Nei"
+        End If
+        
         nodes.Add info.ID, info
         
         If Not children.Exists(info.parentID) Then
@@ -69,21 +83,18 @@ Public Sub LagWBS()
     Next r
     
     ' =============================
-    ' Plasser nivå 0
+    ' Plassering
     ' =============================
     
     nodes("0").TopPos = fixedTopLevel0
     nodes("0").LeftPos = 100
-    
-    ' =============================
-    ' Plasser nivå 1 horisontalt
-    ' =============================
     
     Dim currentLeft As Double
     currentLeft = 100
     
     Dim childID As Variant
     
+    ' Nivå 1 horisontalt
     If children.Exists("0") Then
         
         For Each childID In children("0")
@@ -99,17 +110,12 @@ Public Sub LagWBS()
         
     End If
     
-    ' =============================
-    ' Plasser nivå =2 lokalt per gren
-    ' =============================
-    
+    ' Nivå =2
     If children.Exists("0") Then
-        
         For Each childID In children("0")
             PlaceSubtree CStr(childID), nodes, children, _
                          boksHoyde, vertikalAvstand, indent
         Next childID
-        
     End If
     
     ' =============================
@@ -118,17 +124,30 @@ Public Sub LagWBS()
     
     Dim nodeID As Variant
     Dim shp As Shape
+    Dim lysGronn As Long: lysGronn = RGB(198, 239, 206)
+    Dim lysGra As Long: lysGra = RGB(200, 200, 200)
     
     For Each nodeID In nodes.Keys
         
-        Set shp = wsLayout.Shapes.AddShape( _
-                    msoShapeRoundedRectangle, _
-                    nodes(nodeID).LeftPos, _
-                    nodes(nodeID).TopPos, _
-                    boksBredde, _
-                    boksHoyde)
+        ' Velg shape-type
+        If nodes(nodeID).Milestone = "Ja" Then
+            Set shp = wsLayout.Shapes.AddShape( _
+                        msoShapeDiamond, _
+                        nodes(nodeID).LeftPos, _
+                        nodes(nodeID).TopPos, _
+                        boksBredde, _
+                        boksHoyde)
+        Else
+            Set shp = wsLayout.Shapes.AddShape( _
+                        msoShapeRoundedRectangle, _
+                        nodes(nodeID).LeftPos, _
+                        nodes(nodeID).TopPos, _
+                        boksBredde, _
+                        boksHoyde)
+        End If
         
         With shp
+            
             .TextFrame2.TextRange.Text = _
                 nodes(nodeID).ID & vbCrLf & nodes(nodeID).Caption
             
@@ -136,15 +155,24 @@ Public Sub LagWBS()
             .TextFrame2.TextRange.ParagraphFormat.Alignment = msoAlignCenter
             .TextFrame2.VerticalAnchor = msoAnchorMiddle
             
-            If nodes(nodeID).Level < 2 Then
-                .TextFrame2.TextRange.Font.Fill.ForeColor.RGB = RGB(255, 255, 255)
+            ' Obligatorisk-logikk
+            If nodes(nodeID).Mandatory = "Ja" Then
+                
+                .Line.ForeColor.RGB = RGB(0, 0, 0)
+                .Line.Weight = linjeTykkelse
+                .Fill.ForeColor.RGB = nodes(nodeID).FillColor
+                
             Else
-                .TextFrame2.TextRange.Font.Fill.ForeColor.RGB = RGB(0, 0, 0)
+                
+                .Line.ForeColor.RGB = lysGra
+                .Line.Weight = linjeTykkelse
+                .Fill.ForeColor.RGB = lysGronn
+                
             End If
             
-            .Fill.ForeColor.RGB = nodes(nodeID).FillColor
-            .Line.Weight = linjeTykkelse
         End With
+        
+        Set nodes(nodeID).ShapeObj = shp
         
     Next nodeID
     
@@ -176,11 +204,9 @@ Private Sub PlaceSubtree( _
         nodes(childID).TopPos = currentTop
         nodes(childID).LeftPos = nodes(parentID).LeftPos + indent
         
-        ' Rekursivt videre ned
         PlaceSubtree CStr(childID), nodes, children, _
                      boksHoyde, vertikalAvstand, indent
         
-        ' Flytt currentTop til etter hele child-subtreet
         currentTop = GetSubtreeBottom(CStr(childID), nodes, children, _
                                       boksHoyde, vertikalAvstand)
         
@@ -209,7 +235,7 @@ Private Function GetSubtreeBottom( _
         Next childID
     End If
     
-    GetSubtreeBottom = bottom '+ vertikalAvstand
+    GetSubtreeBottom = bottom + vertikalAvstand
 
 End Function
 
